@@ -17,7 +17,7 @@ connection.connect((err) => {
     if (err) {
         console.log('conncection error')
     } else {
-        console.log('db connected')
+        console.log('contact db connected')
     }
 })
 

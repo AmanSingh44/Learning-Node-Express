@@ -1,10 +1,11 @@
 const express = require('express')
 const router = express.Router()
 const dbConn = require('../config/dbconnection')
+const bcrypt = require("bcrypt")
 
 
-const getAllContacts = (req, res) => {
-    dbConn.query('select * from contacts', (err, result) => {
+const getAllUsers = (req, res) => {
+    dbConn.query('select * from users', (err, result) => {
         if (err) {
             res.json({
                 'message': 'error while fetching data '
@@ -17,10 +18,9 @@ const getAllContacts = (req, res) => {
         }
     })
 }
-
-const getContactbyId = (req, res) => {
+const getUserbyId = (req, res) => {
     const id = req.params.id
-    dbConn.query(`select * from contacts where id ="${id}"`, (err, result) => {
+    dbConn.query(`select * from users where id ="${id}"`, (err, result) => {
         if (err) {
             res.json({
                 'message': 'error while fetching data '
@@ -50,9 +50,11 @@ const getContactbyId = (req, res) => {
 // }
 
 //add using body parser
-const addContact = (req, res) => {
+const addUser = (req, res) => {
     const body = req.body
-    dbConn.query(`insert into contacts (name,phone,email) VALUES ("${body.name}","${body.phone}","${body.email}")`, (err, result) => {
+    let hashedPassword = bcrypt.hashSync(body.password, 10);
+    // console.log(hashedPassword)
+    dbConn.query(`insert into users (username,password,email) VALUES ("${body.username}","${hashedPassword}","${body.email}")`, (err, result) => {
         if (err) {
             res.json({
                 'message': 'error while inserting  data '
@@ -66,9 +68,9 @@ const addContact = (req, res) => {
     })
 }
 
-const updatebyId = (req, res) => {
+const updateUserbyId = (req, res) => {
     const id = req.params.id
-    dbConn.query(`update contacts set name="updatedname" where id="${id}"
+    dbConn.query(`update users set name="updatedname" where id="${id}"
                 `, (err, result) => {
         if (err) {
             res.json({
@@ -82,11 +84,37 @@ const updatebyId = (req, res) => {
         }
     })
 }
+const login = (req, res) => {
 
-const deletebyId = (req, res) => {
+
+    let userPassword
+
+
+    //find user exist or not
+    dbConn.query(`select password from users where email="${req.body.email}`, (err, result) => {
+        userPassword = result[0].password
+
+        bcrypt.compare(req.body.password, userPassword, (err, result) => {
+            //if error than throw error
+
+
+            //if both match than you can do anything
+            if (result) {
+                res.status(200).json({ msg: "Login authenticated" })
+            } else {
+                return res.status(401).json({ msg: "Not Authenticated" })
+            }
+
+        })
+
+    })
+
+}
+
+const deleteUserbyId = (req, res) => {
     const id = req.params.id
     dbConn.query(`
-                delete from contacts where id = "${id}"
+                delete from users where id = "${id}"
                 `, (err, result) => {
         if (err) {
             res.json({
@@ -104,12 +132,4 @@ const deletebyId = (req, res) => {
 
 
 
-
-
-module.exports = {
-    getAllContacts,
-    addContact,
-    deletebyId,
-    getContactbyId,
-    updatebyId
-}
+module.exports = { getAllUsers, getUserbyId, addUser, updateUserbyId, deleteUserbyId, login }
